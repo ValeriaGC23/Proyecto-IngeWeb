@@ -1,10 +1,16 @@
-import { NavLink } from 'react-router-dom';
+import { NavLink, useNavigate } from 'react-router-dom';
 import { useStore } from '../../store/StoreContext';
 import { FiHome, FiUser, FiLogOut } from 'react-icons/fi';
 
 export default function Navbar() {
     const { currentUser, logout } = useStore();
+    const navigate = useNavigate();
     if (!currentUser) return null;
+
+    const handleLogout = () => {
+        logout();
+        navigate('/parches', { replace: true });
+    };
 
     const initials = currentUser.fullName.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase();
 
@@ -21,7 +27,7 @@ export default function Navbar() {
             <div className="nav-user">
                 <div className="nav-avatar">{initials}</div>
                 <span className="nav-username">{currentUser.fullName.split(' ')[0]}</span>
-                <button onClick={logout} className="btn-icon nav-logout" title="Cerrar sesión"><FiLogOut /></button>
+                <button onClick={handleLogout} className="btn-icon nav-logout" title="Cerrar sesión"><FiLogOut /></button>
             </div>
         </nav>
     );

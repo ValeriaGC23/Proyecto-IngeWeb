@@ -1,9 +1,12 @@
+
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useStore } from '../store/StoreContext';
 import { FiMail, FiLock, FiUser, FiBook, FiArrowRight } from 'react-icons/fi';
 
 export default function AuthPage() {
     const { login, register } = useStore();
+    const navigate = useNavigate();
     const [isLogin, setIsLogin] = useState(true);
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
@@ -15,10 +18,18 @@ export default function AuthPage() {
         e.preventDefault();
         setError('');
         if (isLogin) {
-            if (!login(email, password)) setError('Credenciales incorrectas');
+            if (login(email, password)) {
+                navigate('/parches', { replace: true });
+            } else {
+                setError('Credenciales incorrectas');
+            }
         } else {
             if (!fullName || !email || !password || !major) { setError('Completa todos los campos'); return; }
-            if (!register({ fullName, email, password, major, avatarUrl: '' })) setError('El correo ya está registrado');
+            if (register({ fullName, email, password, major, avatarUrl: '' })) {
+                navigate('/parches', { replace: true });
+            } else {
+                setError('El correo ya está registrado');
+            }
         }
     };
 
