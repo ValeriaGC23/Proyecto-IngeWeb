@@ -15,18 +15,34 @@ type Props = {
 };
 
 export default function OptionCard({ option, index, isVoted, isWinner, isVotable, percentage, onVote, formatDate }: Props) {
+  const handleClick = () => {
+    if (isVotable) onVote(option.id);
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (isVotable && (e.key === 'Enter' || e.key === ' ')) {
+      e.preventDefault();
+      onVote(option.id);
+    }
+  };
+
   return (
     <div
       className={`option-card ${isVoted ? 'voted' : ''} ${isWinner ? 'winner' : ''} ${isVotable ? 'votable' : ''}`}
-      onClick={() => isVotable && onVote(option.id)}
+      onClick={handleClick}
+      onKeyDown={handleKeyDown}
+      role={isVotable ? 'button' : undefined}
+      tabIndex={isVotable ? 0 : undefined}
+      aria-label={isVotable ? `Votar por opción ${index + 1}: ${option.place}` : `Opción ${index + 1}: ${option.place}`}
+      aria-pressed={isVotable ? isVoted : undefined}
     >
-      {isWinner && <span className="winner-badge"><FiAward /> Ganadora</span>}
+      {isWinner && <span className="winner-badge"><FiAward aria-hidden="true" /> Ganadora</span>}
       <div className="option-info">
-        <span className="option-place"><FiMapPin /> {option.place}</span>
-        <span className="option-time"><FiClock /> {formatDate(option.time)}</span>
+        <span className="option-place"><FiMapPin aria-hidden="true" /> {option.place}</span>
+        <span className="option-time"><FiClock aria-hidden="true" /> {formatDate(option.time)}</span>
       </div>
       <div className="option-votes">
-        <div className="vote-bar-track">
+        <div className="vote-bar-track" aria-hidden="true">
           <div className="vote-bar-fill" style={{ width: `${percentage}%` }} />
         </div>
         <span className="vote-count">
@@ -36,7 +52,7 @@ export default function OptionCard({ option, index, isVoted, isWinner, isVotable
       {isVotable && (
         <div className="vote-action">
           {isVoted
-            ? <span className="voted-label"><FiCheck /> Tu voto</span>
+            ? <span className="voted-label"><FiCheck aria-hidden="true" /> Tu voto</span>
             : <span className="vote-label">Votar</span>
           }
         </div>

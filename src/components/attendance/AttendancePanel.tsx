@@ -1,24 +1,26 @@
 // Componente panel de asistencia.
-// Mismo patrón que CartPanel: encapsula la lógica de asistencia y check-in del plan.
+// Encapsula la lógica de asistencia y check-in del plan.
 import type { Attendance, AttendanceStatus } from '../../types';
-import Button from '../ui/Button';
+import Spinner from '../ui/Spinner';
 import { FiCheck, FiX, FiHelpCircle } from 'react-icons/fi';
 
 type Props = {
   myAttendance: Attendance | undefined;
   isScheduled: boolean;
   isInWindow: boolean;
+  isLoading?: boolean;
+  isCheckingIn?: boolean;
   onSetAttendance: (status: AttendanceStatus) => void;
   onCheckIn: () => void;
 };
 
-export default function AttendancePanel({ myAttendance, isScheduled, isInWindow, onSetAttendance, onCheckIn }: Props) {
+export default function AttendancePanel({ myAttendance, isScheduled, isInWindow, isLoading = false, isCheckingIn = false, onSetAttendance, onCheckIn }: Props) {
   return (
     <div className="attendance-actions-panel">
       <h3>Tu asistencia</h3>
       <div className="attendance-actions">
         {(['YES', 'NO', 'MAYBE'] as AttendanceStatus[]).map(status => {
-          const icons = { YES: <FiCheck />, NO: <FiX />, MAYBE: <FiHelpCircle /> };
+          const icons = { YES: <FiCheck aria-hidden="true" />, NO: <FiX aria-hidden="true" />, MAYBE: <FiHelpCircle aria-hidden="true" /> };
           const labels = { YES: 'Sí voy', NO: 'No voy', MAYBE: 'Tal vez' };
           const isActive = myAttendance?.status === status;
           return (
@@ -26,8 +28,11 @@ export default function AttendancePanel({ myAttendance, isScheduled, isInWindow,
               key={status}
               onClick={() => onSetAttendance(status)}
               className={`btn-attendance att-${status.toLowerCase()} ${isActive ? 'active' : ''}`}
+              disabled={isLoading}
+              aria-label={`Confirmar asistencia: ${labels[status]}`}
+              aria-pressed={isActive}
             >
-              {icons[status]} {labels[status]}
+              {isLoading && isActive ? <Spinner size="sm" /> : icons[status]} {labels[status]}
             </button>
           );
         })}
@@ -37,13 +42,18 @@ export default function AttendancePanel({ myAttendance, isScheduled, isInWindow,
         <button
           onClick={onCheckIn}
           className={`btn-checkin ${myAttendance?.checkedIn ? 'checked' : ''}`}
-          disabled={myAttendance?.checkedIn || !isInWindow}
+          disabled={myAttendance?.checkedIn || !isInWindow || isCheckingIn}
+          aria-label={myAttendance?.checkedIn ? 'Check-in ya realizado' : 'Hacer check-in'}
         >
-          {myAttendance?.checkedIn
-            ? '✅ Check-in realizado'
-            : isInWindow
-              ? '📍 Hacer Check-in'
-              : '⏳ Check-in no disponible aún'}
+          {isCheckingIn ? (
+            <><Spinner size="sm" /> Realizando check-in...</>
+          ) : myAttendance?.checkedIn ? (
+            '✅ Check-in realizado'
+          ) : isInWindow ? (
+            '📍 Hacer Check-in'
+          ) : (
+            '⏳ Check-in no disponible aún'
+          )}
         </button>
       )}
     </div>

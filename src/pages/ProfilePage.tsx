@@ -1,20 +1,33 @@
 import { useState } from 'react';
 import { useStore } from '../store/StoreContext';
+import { useToast } from '../components/ui/Toast';
+import { apiUpdateProfile } from '../services/api';
+import Spinner from '../components/ui/Spinner';
 import { FiUser, FiMail, FiBook, FiEdit3, FiCheck, FiLogOut } from 'react-icons/fi';
 
 export default function ProfilePage() {
-    const { currentUser, updateProfile, logout, parches } = useStore();
+    const store = useStore();
+    const { showToast } = useToast();
+    const { currentUser, logout, parches } = store;
     const [editing, setEditing] = useState(false);
     const [fullName, setFullName] = useState(currentUser?.fullName ?? '');
     const [major, setMajor] = useState(currentUser?.major ?? '');
+    const [saving, setSaving] = useState(false);
 
     if (!currentUser) return null;
 
     const userParches = parches.filter(p => p.members.some(m => m.userId === currentUser.id));
 
-    const handleSave = () => {
-        updateProfile({ fullName, major });
-        setEditing(false);
+    const handleSave = async () => {
+        setSaving(true);
+        const result = await apiUpdateProfile(store, { fullName, major });
+        if (result.ok) {
+            showToast('Perfil actualizado', 'success');
+            setEditing(false);
+        } else {
+            showToast(result.error, 'error');
+        }
+        setSaving(false);
     };
 
     const initials = currentUser.fullName.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase();
@@ -31,16 +44,44 @@ export default function ProfilePage() {
                 </div>
                 {editing ? (
                     <div className="profile-edit-form">
-                        <input value={fullName} onChange={e => setFullName(e.target.value)} placeholder="Nombre completo" className="profile-input" />
-                        <input value={major} onChange={e => setMajor(e.target.value)} placeholder="Programa" className="profile-input" />
-                        <button onClick={handleSave} className="btn-primary btn-sm"><FiCheck /> Guardar</button>
+                        <label htmlFor="profile-name" className="sr-only">Nombre completo</label>
+                        <input
+                            id="profile-name"
+                            value={fullName}
+                            onChange={e => setFullName(e.target.value)}
+                            placeholder="Nombre completo"
+                            className="profile-input"
+                            disabled={saving}
+                        />
+                        <label htmlFor="profile-major" className="sr-only">Programa</label>
+                        <input
+                            id="profile-major"
+                            value={major}
+                            onChange={e => setMajor(e.target.value)}
+                            placeholder="Programa"
+                            className="profile-input"
+                            disabled={saving}
+                        />
+                        <button
+                            onClick={handleSave}
+                            className={`btn-primary btn-sm ${saving ? 'btn-loading' : ''}`}
+                            disabled={saving}
+                        >
+                            {saving ? <><Spinner size="sm" /> Guardando...</> : <><FiCheck /> Guardar</>}
+                        </button>
                     </div>
                 ) : (
                     <>
                         <h1 className="profile-name">{currentUser.fullName}</h1>
-                        <p className="profile-major"><FiBook /> {currentUser.major}</p>
-                        <p className="profile-email"><FiMail /> {currentUser.email}</p>
-                        <button onClick={() => setEditing(true)} className="btn-ghost btn-sm"><FiEdit3 /> Editar perfil</button>
+                        <p className="profile-major"><FiBook aria-hidden="true" /> {currentUser.major}</p>
+                        <p className="profile-email"><FiMail aria-hidden="true" /> {currentUser.email}</p>
+                        <button
+                            onClick={() => setEditing(true)}
+                            className="btn-ghost btn-sm"
+                            aria-label="Editar perfil"
+                        >
+                            <FiEdit3 /> Editar perfil
+                        </button>
                     </>
                 )}
             </div>
@@ -60,7 +101,13 @@ export default function ProfilePage() {
                 </div>
             </div>
 
-            <button onClick={logout} className="btn-danger"><FiLogOut /> Cerrar sesión</button>
+            <button
+                onClick={logout}
+                className="btn-danger"
+                aria-label="Cerrar sesión"
+            >
+                <FiLogOut /> Cerrar sesión
+            </button>
         </div>
     );
 }

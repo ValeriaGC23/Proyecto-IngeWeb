@@ -1,12 +1,17 @@
 import { useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useStore } from '../store/StoreContext';
+import { useToast } from '../components/ui/Toast';
+import { apiCreatePlan } from '../services/api';
+import Spinner from '../components/ui/Spinner';
 import { FiPlus, FiTrash2, FiMapPin, FiClock } from 'react-icons/fi';
 
 export default function CreatePlanPage() {
     const { id: parcheId } = useParams<{ id: string }>();
     const navigate = useNavigate();
-    const { createPlan, getParcheById, currentUser, getMemberRole } = useStore();
+    const store = useStore();
+    const { showToast } = useToast();
+    const { getParcheById, currentUser, getMemberRole } = store;
     const [title, setTitle] = useState('');
     const [description, setDescription] = useState('');
     const [startDate, setStartDate] = useState('');
@@ -17,6 +22,7 @@ export default function CreatePlanPage() {
         { place: '', time: '' },
     ]);
     const [error, setError] = useState('');
+    const [loading, setLoading] = useState(false);
 
     const parche = getParcheById(parcheId!);
     if (!parche || !currentUser) return null;
@@ -29,37 +35,72 @@ export default function CreatePlanPage() {
         setOptions(prev => prev.map((o, idx) => idx === i ? { ...o, [field]: value } : o));
     };
 
-    const handleSubmit = (e: React.FormEvent) => {
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setError('');
-        if (!title.trim() || !startDate || !endDate) { setError('Completa título y ventana de fechas'); return; }
-        if (options.some(o => !o.place.trim() || !o.time)) { setError('Completa todas las opciones (lugar y hora)'); return; }
-        createPlan(parcheId!, title, description, { start: startDate, end: endDate }, options.map(o => ({ place: o.place, time: new Date(o.time).toISOString() })));
-        navigate(`/parches/${parcheId}`);
+        setLoading(true);
+
+        const result = await apiCreatePlan(store, parcheId!, title, description, { start: startDate, end: endDate }, options);
+        if (result.ok) {
+            showToast('¡Plan creado exitosamente!', 'success');
+            navigate(`/parches/${parcheId}`);
+        } else {
+            setError(result.error);
+            showToast(result.error, 'error');
+        }
+        setLoading(false);
     };
 
     return (
         <div className="create-plan-page">
-            <Link to={`/parches/${parcheId}`} className="back-link">← Volver a {parche.name}</Link>
+            <Link to={`/parches/${parcheId}`} className="back-link" aria-label={`Volver a ${parche.name}`}>← Volver a {parche.name}</Link>
             <h1>Nuevo Plan</h1>
 
-            <form onSubmit={handleSubmit} className="create-plan-form">
+            <form onSubmit={handleSubmit} className="create-plan-form" noValidate>
                 <div className="form-section">
-                    <label>Título del plan</label>
-                    <input value={title} onChange={e => setTitle(e.target.value)} placeholder="Ej: Hamburgueseada de viernes" required />
+                    <label htmlFor="plan-title">Título del plan</label>
+                    <input
+                        id="plan-title"
+                        value={title}
+                        onChange={e => setTitle(e.target.value)}
+                        placeholder="Ej: Hamburgueseada de viernes"
+                        required
+                        disabled={loading}
+                    />
                 </div>
                 <div className="form-section">
-                    <label>Descripción</label>
-                    <textarea value={description} onChange={e => setDescription(e.target.value)} placeholder="Describe el plan..." rows={3} />
+                    <label htmlFor="plan-description">Descripción</label>
+                    <textarea
+                        id="plan-description"
+                        value={description}
+                        onChange={e => setDescription(e.target.value)}
+                        placeholder="Describe el plan..."
+                        rows={3}
+                        disabled={loading}
+                    />
                 </div>
                 <div className="form-row">
                     <div className="form-section">
-                        <label>Fecha inicio</label>
-                        <input type="datetime-local" value={startDate} onChange={e => setStartDate(e.target.value)} required />
+                        <label htmlFor="plan-start-date">Fecha inicio</label>
+                        <input
+                            id="plan-start-date"
+                            type="datetime-local"
+                            value={startDate}
+                            onChange={e => setStartDate(e.target.value)}
+                            required
+                            disabled={loading}
+                        />
                     </div>
                     <div className="form-section">
-                        <label>Fecha fin</label>
-                        <input type="datetime-local" value={endDate} onChange={e => setEndDate(e.target.value)} required />
+                        <label htmlFor="plan-end-date">Fecha fin</label>
+                        <input
+                            id="plan-end-date"
+                            type="datetime-local"
+                            value={endDate}
+                            onChange={e => setEndDate(e.target.value)}
+                            required
+                            disabled={loading}
+                        />
                     </div>
                 </div>
 
@@ -69,27 +110,63 @@ export default function CreatePlanPage() {
                         <div key={i} className="option-row">
                             <div className="option-fields">
                                 <div className="input-group">
-                                    <FiMapPin className="input-icon" />
-                                    <input placeholder="Lugar" value={opt.place} onChange={e => updateOption(i, 'place', e.target.value)} />
+                                    <label htmlFor={`option-place-${i}`} className="sr-only">Lugar opción {i + 1}</label>
+                                    <FiMapPin className="input-icon" aria-hidden="true" />
+                                    <input
+                                        id={`option-place-${i}`}
+                                        placeholder="Lugar"
+                                        value={opt.place}
+                                        onChange={e => updateOption(i, 'place', e.target.value)}
+                                        disabled={loading}
+                                    />
                                 </div>
                                 <div className="input-group">
-                                    <FiClock className="input-icon" />
-                                    <input type="datetime-local" value={opt.time} onChange={e => updateOption(i, 'time', e.target.value)} />
+                                    <label htmlFor={`option-time-${i}`} className="sr-only">Fecha y hora opción {i + 1}</label>
+                                    <FiClock className="input-icon" aria-hidden="true" />
+                                    <input
+                                        id={`option-time-${i}`}
+                                        type="datetime-local"
+                                        value={opt.time}
+                                        onChange={e => updateOption(i, 'time', e.target.value)}
+                                        disabled={loading}
+                                    />
                                 </div>
                             </div>
                             {options.length > 3 && (
-                                <button type="button" onClick={() => removeOption(i)} className="btn-icon btn-icon-danger"><FiTrash2 /></button>
+                                <button
+                                    type="button"
+                                    onClick={() => removeOption(i)}
+                                    className="btn-icon btn-icon-danger"
+                                    aria-label={`Eliminar opción ${i + 1}`}
+                                    disabled={loading}
+                                >
+                                    <FiTrash2 />
+                                </button>
                             )}
                         </div>
                     ))}
-                    <button type="button" onClick={addOption} className="btn-ghost btn-sm"><FiPlus /> Agregar opción</button>
+                    <button
+                        type="button"
+                        onClick={addOption}
+                        className="btn-ghost btn-sm"
+                        disabled={loading}
+                        aria-label="Agregar otra opción"
+                    >
+                        <FiPlus /> Agregar opción
+                    </button>
                 </div>
 
-                {error && <p className="auth-error">{error}</p>}
+                {error && <p className="auth-error" role="alert" aria-live="polite">{error}</p>}
 
                 <div className="modal-actions">
                     <Link to={`/parches/${parcheId}`} className="btn-ghost">Cancelar</Link>
-                    <button type="submit" className="btn-primary">Crear plan como borrador</button>
+                    <button
+                        type="submit"
+                        className={`btn-primary ${loading ? 'btn-loading' : ''}`}
+                        disabled={loading}
+                    >
+                        {loading ? <><Spinner size="sm" /> Creando...</> : 'Crear plan como borrador'}
+                    </button>
                 </div>
             </form>
         </div>

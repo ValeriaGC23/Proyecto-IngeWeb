@@ -1,5 +1,6 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { StoreProvider, useStore } from './store/StoreContext';
+import { ToastProvider } from './components/ui/Toast';
 import Navbar from './components/layout/Navbar';
 import AuthPage from './pages/AuthPage';
 import ProfilePage from './pages/ProfilePage';
@@ -35,7 +36,9 @@ export default function App() {
   return (
     <BrowserRouter>
       <StoreProvider>
-        <AppRoutes />
+        <ToastProvider>
+          <AppRoutes />
+        </ToastProvider>
       </StoreProvider>
     </BrowserRouter>
   );

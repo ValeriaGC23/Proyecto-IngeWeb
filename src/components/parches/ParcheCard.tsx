@@ -25,9 +25,7 @@ export default function ParcheCard({ parche, userRole }: Props) {
         <p className="parche-card-desc">{parche.description}</p>
       </div>
       <div className="parche-card-footer">
-        <span className="member-count">
-          <FiUsers /> {parche.members.length} miembros
-        </span>
+        <FiUsers /> {parche.members.length} miembros
       </div>
     </Link>
   );
