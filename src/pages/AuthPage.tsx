@@ -157,7 +157,7 @@ export default function AuthPage() {
 
                 {isLogin && (
                     <div className="auth-hint">
-                        <p>🧪 Demo: usa <strong>samm@eia.edu.co</strong> / <strong>1234</strong></p>
+                        <p>🧪 Demo: usa <strong>carlos@eia.edu.co</strong> / <strong>1234</strong></p>
                     </div>
                 )}
             </div>
