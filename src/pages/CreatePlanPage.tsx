@@ -24,6 +24,9 @@ export default function CreatePlanPage() {
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
 
+    // Mínima fecha permitida (ahora local)
+    const minDateTime = new Date(Date.now() - new Date().getTimezoneOffset() * 60000).toISOString().slice(0, 16);
+
     const parche = getParcheById(parcheId!);
     if (!parche || !currentUser) return null;
     const role = getMemberRole(parche.id, currentUser.id);
@@ -38,6 +41,18 @@ export default function CreatePlanPage() {
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setError('');
+
+        if (new Date(startDate) < new Date()) {
+            setError('La fecha de inicio no puede ser en el pasado');
+            showToast('La fecha de inicio no puede ser en el pasado', 'error');
+            return;
+        }
+        if (new Date(endDate) <= new Date(startDate)) {
+            setError('La fecha de fin debe ser posterior a la de inicio');
+            showToast('La fecha de fin debe ser posterior a la de inicio', 'error');
+            return;
+        }
+
         setLoading(true);
 
         const result = await apiCreatePlan(store, parcheId!, title, description, { start: startDate, end: endDate }, options);
@@ -87,6 +102,7 @@ export default function CreatePlanPage() {
                             type="datetime-local"
                             value={startDate}
                             onChange={e => setStartDate(e.target.value)}
+                            min={minDateTime}
                             required
                             disabled={loading}
                         />
@@ -98,6 +114,7 @@ export default function CreatePlanPage() {
                             type="datetime-local"
                             value={endDate}
                             onChange={e => setEndDate(e.target.value)}
+                            min={startDate || minDateTime}
                             required
                             disabled={loading}
                         />
@@ -128,6 +145,8 @@ export default function CreatePlanPage() {
                                         type="datetime-local"
                                         value={opt.time}
                                         onChange={e => updateOption(i, 'time', e.target.value)}
+                                        min={startDate || minDateTime}
+                                        max={endDate || undefined}
                                         disabled={loading}
                                     />
                                 </div>

@@ -171,9 +171,14 @@ export async function apiCreatePlan(
 
   if (!title.trim()) return fail('El título del plan es obligatorio', 'VALIDATION');
   if (!dateWindow.start || !dateWindow.end) return fail('Completa la ventana de fechas', 'VALIDATION');
+  if (new Date(dateWindow.start) < new Date()) return fail('La fecha de inicio no puede ser en el pasado', 'VALIDATION');
+  if (new Date(dateWindow.end) <= new Date(dateWindow.start)) return fail('La fecha de fin debe ser posterior a la de inicio', 'VALIDATION');
   if (options.length < 3) return fail('El plan debe tener al menos 3 opciones', 'VALIDATION');
   if (options.some(o => !o.place.trim() || !o.time)) {
     return fail('Completa todas las opciones (lugar y hora)', 'VALIDATION');
+  }
+  if (options.some(o => new Date(o.time) < new Date(dateWindow.start) || new Date(o.time) > new Date(dateWindow.end))) {
+    return fail('Las opciones deben estar dentro de la ventana de fechas del plan', 'VALIDATION');
   }
 
   const plan = store.createPlan(

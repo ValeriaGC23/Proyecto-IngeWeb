@@ -2,7 +2,7 @@ import type { User, Parche, Plan, Vote, Attendance } from '../types';
 
 
 export const seedUsers: User[] = [
-    { id: 'u1', fullName: 'Carlos Méndez', email: 'cmendez@uniandes.edu.co', major: 'Ingeniería de Sistemas', avatarUrl: '', password: '1234' },
+    { id: 'u1', fullName: 'Carlos Méndez', email: 'samm@eia.edu.co', major: 'Ingeniería de Sistemas', avatarUrl: '', password: '1234' },
     { id: 'u2', fullName: 'Valentina Ríos', email: 'vrios@uniandes.edu.co', major: 'Diseño Industrial', avatarUrl: '', password: '1234' },
     { id: 'u3', fullName: 'Santiago Herrera', email: 'sherrera@uniandes.edu.co', major: 'Administración', avatarUrl: '', password: '1234' },
     { id: 'u4', fullName: 'Isabella Torres', email: 'itorres@uniandes.edu.co', major: 'Derecho', avatarUrl: '', password: '1234' },
